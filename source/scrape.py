@@ -18,14 +18,23 @@ PASSWORD = "RH@cvLDi!5!j!YU"
 
 # Glassdoor URLs
 LOGIN_URL = "https://www.glassdoor.es/index.htm"
-JOBS_URL = "https://www.glassdoor.es/Empleo/espa%C3%B1a-data-scientist-empleos-SRCH_IL.0,6_IN219_KO7,21.htm"
-REVIEWS_URL = "https://www.glassdoor.es/Opiniones/index.htm?filterType=RATING_OVERALL&locId=219&locType=N&locName=Espa%C3%B1a&occ=Data+Science&page=1&overall_rating_low=4"
-SALARY_URL = "https://www.glassdoor.es/Sueldos/espa%C3%B1a-data-scientist-sueldo-SRCH_IL.0,6_IN219_KO7,21.htm"
+JOBS_URL = "https://www.glassdoor.es/Empleo/espa%C3%B1a-empleos-SRCH_IL.0,6_IN219.htm" #limited to spain TODO: click it also programatically
+
+# REVIEWS_URL = "https://www.glassdoor.es/Opiniones/index.htm?filterType=RATING_OVERALL&locId=219&locType=N&locName=Espa%C3%B1a&occ=Data+Science&page=1&overall_rating_low=4"
+# SALARY_URL = "https://www.glassdoor.es/Sueldos/espa%C3%B1a-data-scientist-sueldo-SRCH_IL.0,6_IN219_KO7,21.htm"
+
 
 # Set up ChromeDriver path (Modify this for your system)
-CHROMEDRIVER_PATH = "resources/chromedriver-linux64/chromedriver"  # Change this to your ChromeDriver path
+CHROMEDRIVER_PATH = "resources/chromedriver-linux64/chromedriver"
 
-# Launch Chrome with stealth settings
+# Job titles to search
+JOB_TITLES = [
+    "Data Scientist", "Data Engineer", "Data Analyst", "Machine Learning Engineer",
+    "AI Engineer", "Business Intelligence Analyst", "Big Data Engineer",
+    "NLP Engineer", "Data Architect"
+]
+
+# Set up WebDriver options
 options = Options()
 options.add_argument(f"user-agent={UserAgent().random}")
 options.add_argument("--disable-blink-features=AutomationControlled")
@@ -61,132 +70,139 @@ def login():
     except Exception as e:
         print("❌ Login failed:", e)
 
-# Function to scrape job details
 def scrape_jobs():
-    """Scrapes job offers (title, employer, rating, location, salary, job link, job age) and saves to CSV."""
-    
-    # Start WebDriver (Ensure you set up your ChromeDriver correctly)
-    driver = webdriver.Chrome()
+    """Scrapes job listings for multiple job titles."""
+    all_jobs_data = []
 
-    JOBS_URL = "https://www.glassdoor.es/Empleo/espana-empleos-SRCH_IL.0,6_IN219.htm"
-    driver.get(JOBS_URL)
-    print("✅ Opened Jobs Page.")
+    for job_title in JOB_TITLES:
+        print(f"\n🔍 Searching for: {job_title}")
 
-    random_sleep()
+        # Open the Glassdoor job search page
+        driver.get(JOBS_URL)
+        random_sleep()
 
-    # Click "Stay on Web" button if needed
-    try:
-        stay_on_web_button = WebDriverWait(driver, 3).until(
-            EC.element_to_be_clickable((By.XPATH, '//button[contains(@class, "css-w7kqor")]'))
-        )
-        stay_on_web_button.click()
-        print("🔵 Clicked 'Stay on Web' button.")
-    except:
-        print("🟡 'Stay on Web' button not found or not needed.")
-
-    # Close alerts modal if present
-    try:
-        close_button = WebDriverWait(driver, 3).until(
-            EC.element_to_be_clickable((By.XPATH, '//button[@aria-label="Cancelar"]'))
-        )
-        close_button.click()
-        print("🔵 Closed modal successfully.")
-    except:
-        print("🟡 No modal found or already closed.")
-
-    random_sleep()
-    
-    # Locate the job listings container
-    try:
-        job_list = driver.find_element(By.XPATH, '//*[@id="left-column"]/div[2]/ul')
-        job_elements = job_list.find_elements(By.TAG_NAME, "li")  # Assuming each job is in an <li> tag
-        print(f"✅ Found {len(job_elements)} jobs.")
-    except Exception as e:
-        print(f"❌ Error locating job list: {e}")
-        return
-
-    jobs_data = []  # List to store job details
-
-    # Iterate through job listings
-    for i, job in enumerate(job_elements[:10]):  # Limit to 10 jobs for demo
+        # Locate search bar and enter job title
         try:
-            # Print raw HTML of job element for debugging
-            print(f"\n🔎 Job {i+1} raw HTML:\n{job.get_attribute('outerHTML')}\n")
-
-            # Extract Job Title
-            try:
-                job_title = job.find_element(By.CLASS_NAME, "JobCard_jobTitle__GLyJ1").text
-            except:
-                job_title = "Title not available"
-
-            # Extract Employer Name
-            try:
-                employer_name = job.find_element(By.CLASS_NAME, "EmployerProfile_compactEmployerName__9MGcV").text
-            except:
-                employer_name = "Employer not specified"
-
-            # Extract Employer Rating
-            try:
-                employer_rating = job.find_element(By.CLASS_NAME, "rating-single-star_RatingText__XENmU").text
-            except:
-                employer_rating = "Rating not available"
-
-            # Extract Job Location
-            try:
-                job_location = job.find_element(By.CLASS_NAME, "JobCard_location__Ds1fM").text
-            except:
-                job_location = "Location not available"
-
-            # Extract Salary Info (if available)
-            try:
-                job_salary = job.find_element(By.CLASS_NAME, "css-1bluz6i").text
-            except:
-                job_salary = "Salary not specified"
-
-            # Extract Job Link
-            try:
-                job_link = job.find_element(By.CLASS_NAME, "JobCard_jobTitle__GLyJ1").get_attribute("href")
-            except:
-                job_link = "No link available"
-
-            # Extract Job Age (e.g., "15 días")
-            try:
-                job_age = job.find_element(By.CLASS_NAME, "JobCard_listingAge__jJsuc").text
-            except:
-                job_age = "Job age not available"
-
-            # Print extracted details
-            print(f"🔹 {i+1}. {job_title} at {employer_name}")
-            print(f"   ⭐ Rating: {employer_rating}")
-            print(f"   📍 Location: {job_location}")
-            print(f"   💰 Salary: {job_salary}")
-            print(f"   🔗 Link: {job_link}")
-            print(f"   🕑 Job Age: {job_age}")
-
-            # Store job details in list
-            jobs_data.append({
-                "Job Title": job_title,
-                "Employer": employer_name,
-                "Rating": employer_rating,
-                "Location": job_location,
-                "Salary": job_salary,
-                "Job Link": job_link,
-                "Job Age": job_age
-            })
-
+            search_bar = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.XPATH, '//*[@id="searchBar-jobTitle"]'))
+            )
+            search_bar.clear()
+            search_bar.send_keys(job_title)
+            search_bar.send_keys(Keys.RETURN)
+            print(f"✅ Entered '{job_title}' in search bar and initiated search.")
         except Exception as e:
-            print(f"❌ Error extracting job {i+1}:", e)
+            print(f"❌ Could not enter job title {job_title}: {e}")
+            continue
+
+        random_sleep()
+
+        # Click "Stay on Web" button if needed
+        try:
+            stay_on_web_button = WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((By.XPATH, '//button[contains(@class, "css-w7kqor")]'))
+            )
+            stay_on_web_button.click()
+            print("🔵 Clicked 'Stay on Web' button.")
+        except:
+            print("🟡 'Stay on Web' button not found or not needed.")
+
+        # Close modal pop-ups if needed
+        try:
+            close_button = WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((By.XPATH, '//button[@aria-label="Cancelar"]'))
+            )
+            close_button.click()
+            print("🔵 Closed modal successfully.")
+        except:
+            print("🟡 No modal found or already closed.")
+
+        random_sleep()
+        
+        # Locate the job listings container
+        try:
+            job_list = driver.find_element(By.XPATH, '//*[@id="left-column"]/div[2]/ul')
+            job_elements = job_list.find_elements(By.TAG_NAME, "li")  # Assuming each job is in an <li> tag
+            print(f"✅ Found {len(job_elements)} jobs for {job_title}.")
+        except Exception as e:
+            print(f"❌ Error locating job list for {job_title}: {e}")
+            continue
+
+        # Iterate through job listings
+        for i, job in enumerate(job_elements[:10]):  # Limit to 10 jobs per title for demo
+            try:
+                # Extract Job Title
+                try:
+                    extracted_title = job.find_element(By.CLASS_NAME, "JobCard_jobTitle__GLyJ1").text
+                except:
+                    extracted_title = "Title not available"
+
+                # Extract Employer Name
+                try:
+                    employer_name = job.find_element(By.CLASS_NAME, "EmployerProfile_compactEmployerName__9MGcV").text
+                except:
+                    employer_name = "Employer not specified"
+
+                # Extract Employer Rating
+                try:
+                    employer_rating = job.find_element(By.CLASS_NAME, "rating-single-star_RatingText__XENmU").text
+                except:
+                    employer_rating = "Rating not available"
+
+                # Extract Job Location
+                try:
+                    job_location = job.find_element(By.CLASS_NAME, "JobCard_location__Ds1fM").text
+                except:
+                    job_location = "Location not available"
+
+                # Extract Salary Info
+                try:
+                    job_salary = job.find_element(By.CLASS_NAME, "css-1bluz6i").text
+                except:
+                    job_salary = "Salary not specified"
+
+                # Extract Job Link
+                try:
+                    job_link = job.find_element(By.CLASS_NAME, "JobCard_jobTitle__GLyJ1").get_attribute("href")
+                except:
+                    job_link = "No link available"
+
+                # Extract Job Age
+                try:
+                    job_age = job.find_element(By.CLASS_NAME, "JobCard_listingAge__jJsuc").text
+                except:
+                    job_age = "Job age not available"
+
+                # Print extracted details
+                print(f"🔹 {i+1}. {extracted_title} at {employer_name}")
+                print(f"   ⭐ Rating: {employer_rating}")
+                print(f"   📍 Location: {job_location}")
+                print(f"   💰 Salary: {job_salary}")
+                print(f"   🔗 Link: {job_link}")
+                print(f"   🕑 Job Age: {job_age}")
+
+                # Store job details
+                all_jobs_data.append({
+                    "Searched Job Title": job_title,
+                    "Extracted Job Title": extracted_title,
+                    "Employer": employer_name,
+                    "Rating": employer_rating,
+                    "Location": job_location,
+                    "Salary": job_salary,
+                    "Job Link": job_link,
+                    "Job Age": job_age
+                })
+
+            except Exception as e:
+                print(f"❌ Error extracting job {i+1}: {e}")
 
     # Write data to CSV file
-    csv_file = "jobs.csv"
+    csv_file = "glassdoor_jobs.csv"
     with open(csv_file, mode="w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=jobs_data[0].keys())
+        writer = csv.DictWriter(file, fieldnames=all_jobs_data[0].keys())
         writer.writeheader()
-        writer.writerows(jobs_data)
+        writer.writerows(all_jobs_data)
 
-    print(f"✅ Job scraping complete. Data saved to {csv_file}.")
-
-    # Close the browser
+    print(f"\n✅ Job scraping complete. Data saved to {csv_file}.")
     driver.quit()
 
 
@@ -224,8 +240,8 @@ def scrape_salaries():
 login()
 random_sleep(120,200)
 scrape_jobs()
-scrape_reviews()
-scrape_salaries()
+# scrape_reviews()
+# scrape_salaries()
 
 driver.quit()
 print("✅ Scraping complete!")
