@@ -95,6 +95,8 @@ def scrape_jobs():
             continue
 
         random_sleep()
+        
+        
 
         # Click "Stay on Web" button if needed
         try:
@@ -128,7 +130,7 @@ def scrape_jobs():
             continue
 
         # Iterate through job listings
-        for i, job in enumerate(job_elements[:10]):  # Limit to 10 jobs per title for demo
+        for i, job in enumerate(job_elements[:12]):  # Limit to 10 jobs per title for demo
             try:
                 # Extract Job Title
                 try:
