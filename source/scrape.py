@@ -37,6 +37,19 @@ JOB_TITLES = [
 
 LOCATIONS = ['España']
 
+def close_cookie_banner():
+    try:
+        # Clica "Aceptar" o equivalent del banner de cookies (OneTrust)
+        accept_button = WebDriverWait(driver, 3).until(
+            EC.element_to_be_clickable((By.XPATH, '//button[contains(text(), "Aceptar")]'))
+        )
+        accept_button.click()
+        print("🔵 Cookie banner closed.")
+        random_sleep(1, 2)
+    except:
+        # Si no hi ha banner, tot bé
+        pass
+
 # Set up WebDriver options
 options = Options()
 options.add_argument(f"user-agent={UserAgent().random}")
@@ -140,8 +153,34 @@ def scrape_jobs():
 
             random_sleep()
            
+            #load more jobs
+            for scroll_round in range(4):
+                print(f"\n🔄 Scroll round {scroll_round + 1}...")
 
-            
+                # Simula scroll gradual com un usuari
+                for scroll_step in range(3):
+                    driver.execute_script("window.scrollBy(0, window.innerHeight * 0.7);")
+                    print(f"    🖱️ Scrolled down {scroll_step + 1}")
+                    random_sleep(1, 2)
+
+                # Esperar càrrega de nous elements
+                random_sleep(2, 3)
+
+# Buscar i clicar el botó "Más empleos" si apareix
+            try:
+                close_cookie_banner()  # 👈👈 Solució clau abans de clicar
+
+                more_button = WebDriverWait(driver, 4).until(
+                    EC.element_to_be_clickable((By.XPATH, '//*[@id="left-column"]/div[2]/div/div/button[1]'))
+                )
+                driver.execute_script("arguments[0].scrollIntoView(true);", more_button)
+                random_sleep(1, 2)
+                more_button.click()
+                print("🟢 Clicked 'Más empleos' to load more jobs.")
+                random_sleep(4, 6)
+            except Exception as e:
+                print(f"🔚 No more 'Más empleos' button or unable to click. ({e})")
+                break
             # Locate the job listings container
             try:
                 job_list = driver.find_element(By.XPATH, '//*[@id="left-column"]/div[2]/ul')
@@ -150,9 +189,9 @@ def scrape_jobs():
             except Exception as e:
                 print(f"❌ Error locating job list for {job_title}: {e}")
                 continue
-
+            
             # Iterate through job listings
-            for i, job in enumerate(job_elements[:30]):  # Limit to 10 jobs per title for demo
+            for i, job in enumerate(job_elements[:]):  
                 try:
                     # Extract Job Title
                     try:
@@ -241,6 +280,3 @@ scrape_jobs()
 driver.quit()
 print("✅ Scraping complete!")
 
-
-#button more empleos xpath //*[@id="left-column"]/div[2]/div/div/button
-#button ubicacion xpath //*[@id="searchBar-location"]
