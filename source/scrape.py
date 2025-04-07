@@ -18,7 +18,8 @@ PASSWORD = "RH@cvLDi!5!j!YU"
 
 # Glassdoor URLs
 LOGIN_URL = "https://www.glassdoor.es/index.htm"
-JOBS_URL = "https://www.glassdoor.es/Empleo/espa%C3%B1a-empleos-SRCH_IL.0,6_IN219.htm" #limited to spain TODO: click it also programatically
+JOBS_URL = "https://www.glassdoor.es/Empleo/index.htm"
+#JOBS_URL = "https://www.glassdoor.es/Empleo/espa%C3%B1a-empleos-SRCH_IL.0,6_IN219.htm" #limited to spain TODO: click it also programatically
 
 # REVIEWS_URL = "https://www.glassdoor.es/Opiniones/index.htm?filterType=RATING_OVERALL&locId=219&locType=N&locName=Espa%C3%B1a&occ=Data+Science&page=1&overall_rating_low=4"
 # SALARY_URL = "https://www.glassdoor.es/Sueldos/espa%C3%B1a-data-scientist-sueldo-SRCH_IL.0,6_IN219_KO7,21.htm"
@@ -33,6 +34,8 @@ JOB_TITLES = [
     "AI Engineer", "Business Intelligence Analyst", "Big Data Engineer",
     "NLP Engineer", "Data Architect"
 ]
+
+LOCATIONS = ['España']
 
 # Set up WebDriver options
 options = Options()
@@ -74,169 +77,159 @@ def scrape_jobs():
     """Scrapes job listings for multiple job titles."""
     all_jobs_data = []
 
-    for job_title in JOB_TITLES:
-        print(f"\n🔍 Searching for: {job_title}")
 
-        # Open the Glassdoor job search page
-        driver.get(JOBS_URL)
-        random_sleep()
-
-        # Locate search bar and enter job title
-        try:
-            search_bar = WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.XPATH, '//*[@id="searchBar-jobTitle"]'))
+    # Click "Stay on Web" button if needed
+    try:
+        stay_on_web_button = WebDriverWait(driver, 3).until(
+            EC.element_to_be_clickable((By.XPATH, '//button[contains(@class, "css-w7kqor")]'))
             )
-            search_bar.clear()
-            search_bar.send_keys(job_title)
-            search_bar.send_keys(Keys.RETURN)
-            print(f"✅ Entered '{job_title}' in search bar and initiated search.")
-        except Exception as e:
-            print(f"❌ Could not enter job title {job_title}: {e}")
-            continue
-
-        random_sleep()
-        
-        
-
-        # Click "Stay on Web" button if needed
-        try:
-            stay_on_web_button = WebDriverWait(driver, 3).until(
-                EC.element_to_be_clickable((By.XPATH, '//button[contains(@class, "css-w7kqor")]'))
-            )
-            stay_on_web_button.click()
-            print("🔵 Clicked 'Stay on Web' button.")
-        except:
+        stay_on_web_button.click()
+        print("🔵 Clicked 'Stay on Web' button.")
+    except:
             print("🟡 'Stay on Web' button not found or not needed.")
+            
+    
+    for location in LOCATIONS:
+        # Enter location "España"
+       
 
-        # Close modal pop-ups if needed
-        try:
-            close_button = WebDriverWait(driver, 3).until(
-                EC.element_to_be_clickable((By.XPATH, '//button[@aria-label="Cancelar"]'))
-            )
-            close_button.click()
-            print("🔵 Closed modal successfully.")
-        except:
-            print("🟡 No modal found or already closed.")
+        for job_title in JOB_TITLES:
+            print(f"\n🔍 Searching for: {job_title}")
 
-        random_sleep()
-        
-        # Locate the job listings container
-        try:
-            job_list = driver.find_element(By.XPATH, '//*[@id="left-column"]/div[2]/ul')
-            job_elements = job_list.find_elements(By.TAG_NAME, "li")  # Assuming each job is in an <li> tag
-            print(f"✅ Found {len(job_elements)} jobs for {job_title}.")
-        except Exception as e:
-            print(f"❌ Error locating job list for {job_title}: {e}")
-            continue
+            # Open the Glassdoor job search page
+            driver.get(JOBS_URL)
+            random_sleep()
 
-        # Iterate through job listings
-        for i, job in enumerate(job_elements[:12]):  # Limit to 10 jobs per title for demo
+            # Locate search bar and enter job title
             try:
-                # Extract Job Title
-                try:
-                    extracted_title = job.find_element(By.CLASS_NAME, "JobCard_jobTitle__GLyJ1").text
-                except:
-                    extracted_title = "Title not available"
-
-                # Extract Employer Name
-                try:
-                    employer_name = job.find_element(By.CLASS_NAME, "EmployerProfile_compactEmployerName__9MGcV").text
-                except:
-                    employer_name = "Employer not specified"
-
-                # Extract Employer Rating
-                try:
-                    employer_rating = job.find_element(By.CLASS_NAME, "rating-single-star_RatingText__XENmU").text
-                except:
-                    employer_rating = "Rating not available"
-
-                # Extract Job Location
-                try:
-                    job_location = job.find_element(By.CLASS_NAME, "JobCard_location__Ds1fM").text
-                except:
-                    job_location = "Location not available"
-
-                # Extract Salary Info
-                try:
-                    job_salary = job.find_element(By.CLASS_NAME, "css-1bluz6i").text
-                except:
-                    job_salary = "Salary not specified"
-
-                # Extract Job Link
-                try:
-                    job_link = job.find_element(By.CLASS_NAME, "JobCard_jobTitle__GLyJ1").get_attribute("href")
-                except:
-                    job_link = "No link available"
-
-                # Extract Job Age
-                try:
-                    job_age = job.find_element(By.CLASS_NAME, "JobCard_listingAge__jJsuc").text
-                except:
-                    job_age = "Job age not available"
-
-                # Print extracted details
-                print(f"🔹 {i+1}. {extracted_title} at {employer_name}")
-                print(f"   ⭐ Rating: {employer_rating}")
-                print(f"   📍 Location: {job_location}")
-                print(f"   💰 Salary: {job_salary}")
-                print(f"   🔗 Link: {job_link}")
-                print(f"   🕑 Job Age: {job_age}")
-
-                # Store job details
-                all_jobs_data.append({
-                    "Searched Job Title": job_title,
-                    "Extracted Job Title": extracted_title,
-                    "Employer": employer_name,
-                    "Rating": employer_rating,
-                    "Location": job_location,
-                    "Salary": job_salary,
-                    "Job Link": job_link,
-                    "Job Age": job_age
-                })
-
+                search_bar = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.XPATH, '//*[@id="searchBar-jobTitle"]'))
+                )
+                search_bar.clear()
+                search_bar.send_keys(job_title)
+                search_bar.send_keys(Keys.RETURN)
+                print(f"✅ Entered '{job_title}' in search bar and initiated search.")
             except Exception as e:
-                print(f"❌ Error extracting job {i+1}: {e}")
+                print(f"❌ Could not enter job title {job_title}: {e}")
+                continue
 
-    # Write data to CSV file
-    csv_file = "glassdoor_jobs.csv"
-    with open(csv_file, mode="w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=all_jobs_data[0].keys())
-        writer.writeheader()
-        writer.writerows(all_jobs_data)
+            random_sleep()
+            
+            
 
-    print(f"\n✅ Job scraping complete. Data saved to {csv_file}.")
-    driver.quit()
+            
+            try:
+                location_box = driver.find_element(By.XPATH, '//*[@id="searchBar-location"]')
+                location_box.clear()
+                location_box.send_keys(location)
+                location_box.send_keys(Keys.RETURN)
+                print("✅ Entered location: España")
+            except Exception as e:
+                print(f"❌ Failed to enter location: {e}")
+                continue        
+            
+            # Close modal pop-ups if needed
+            try:
+                close_button = WebDriverWait(driver, 3).until(
+                    EC.element_to_be_clickable((By.XPATH, '//button[@aria-label="Cancelar"]'))
+                )
+                close_button.click()
+                print("🔵 Closed modal successfully.")
+            except:
+                print("🟡 No modal found or already closed.")
+
+            random_sleep()
+           
+
+            
+            # Locate the job listings container
+            try:
+                job_list = driver.find_element(By.XPATH, '//*[@id="left-column"]/div[2]/ul')
+                job_elements = job_list.find_elements(By.TAG_NAME, "li")  # Assuming each job is in an <li> tag
+                print(f"✅ Found {len(job_elements)} jobs for {job_title}.")
+            except Exception as e:
+                print(f"❌ Error locating job list for {job_title}: {e}")
+                continue
+
+            # Iterate through job listings
+            for i, job in enumerate(job_elements[:30]):  # Limit to 10 jobs per title for demo
+                try:
+                    # Extract Job Title
+                    try:
+                        extracted_title = job.find_element(By.CLASS_NAME, "JobCard_jobTitle__GLyJ1").text
+                    except:
+                        extracted_title = "Title not available"
+
+                    # Extract Employer Name
+                    try:
+                        employer_name = job.find_element(By.CLASS_NAME, "EmployerProfile_compactEmployerName__9MGcV").text
+                    except:
+                        employer_name = "Employer not specified"
+
+                    # Extract Employer Rating
+                    try:
+                        employer_rating = job.find_element(By.CLASS_NAME, "rating-single-star_RatingText__XENmU").text
+                    except:
+                        employer_rating = "Rating not available"
+
+                    # Extract Job Location
+                    try:
+                        job_location = job.find_element(By.CLASS_NAME, "JobCard_location__Ds1fM").text
+                    except:
+                        job_location = "Location not available"
+
+                    # Extract Salary Info
+                    try:
+                        job_salary = job.find_element(By.CLASS_NAME, "css-1bluz6i").text
+                    except:
+                        job_salary = "Salary not specified"
+
+                    # Extract Job Link
+                    try:
+                        job_link = job.find_element(By.CLASS_NAME, "JobCard_jobTitle__GLyJ1").get_attribute("href")
+                    except:
+                        job_link = "No link available"
+
+                    # Extract Job Age
+                    try:
+                        job_age = job.find_element(By.CLASS_NAME, "JobCard_listingAge__jJsuc").text
+                    except:
+                        job_age = "Job age not available"
+
+                    # Print extracted details
+                    print(f"🔹 {i+1}. {extracted_title} at {employer_name}")
+                    print(f"   ⭐ Rating: {employer_rating}")
+                    print(f"   📍 Location: {job_location}")
+                    print(f"   💰 Salary: {job_salary}")
+                    print(f"   🔗 Link: {job_link}")
+                    print(f"   🕑 Job Age: {job_age}")
+
+                    # Store job details
+                    all_jobs_data.append({
+                        "Searched Job Title": job_title,
+                        "Extracted Job Title": extracted_title,
+                        "Employer": employer_name,
+                        "Rating": employer_rating,
+                        "Location": job_location,
+                        "Salary": job_salary,
+                        "Job Link": job_link,
+                        "Job Age": job_age
+                    })
+
+                except Exception as e:
+                    print(f"❌ Error extracting job {i+1}: {e}")
+
+        # Write data to CSV file
+        csv_file = "glassdoor_jobs.csv"
+        with open(csv_file, mode="w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(file, fieldnames=all_jobs_data[0].keys())
+            writer.writeheader()
+            writer.writerows(all_jobs_data)
+
+        print(f"\n✅ Job scraping complete. Data saved to {csv_file}.")
+        driver.quit()
 
 
-def scrape_reviews():
-    """Scrapes company reviews."""
-    driver.get(REVIEWS_URL)
-    random_sleep()
-
-    reviews = driver.find_elements(By.CLASS_NAME, "gdReview")
-
-    for i, review in enumerate(reviews[:5]):  # Limit to 5 for demo
-        try:
-            rating = review.find_element(By.CLASS_NAME, "ratingNumber").text
-            summary = review.find_element(By.CLASS_NAME, "summary").text
-            print(f"⭐ {i+1}. {rating} - {summary}")
-        except Exception as e:
-            print("❌ Review scraping error:", e)
-
-def scrape_salaries():
-    """Scrapes salary information."""
-    driver.get(SALARY_URL)
-    random_sleep()
-
-    salaries = driver.find_elements(By.CLASS_NAME, "salaryRow")
-
-    for i, salary in enumerate(salaries[:5]):  # Limit to 5 for demo
-        try:
-            role = salary.find_element(By.CLASS_NAME, "css-1lcgc3v").text
-            pay = salary.find_element(By.CLASS_NAME, "css-1bluz6i").text
-            print(f"💰 {i+1}. {role} earns {pay}")
-        except Exception as e:
-            print("❌ Salary scraping error:", e)
 
 # Run the scraping functions
 login()
@@ -247,3 +240,7 @@ scrape_jobs()
 
 driver.quit()
 print("✅ Scraping complete!")
+
+
+#button more empleos xpath //*[@id="left-column"]/div[2]/div/div/button
+#button ubicacion xpath //*[@id="searchBar-location"]
