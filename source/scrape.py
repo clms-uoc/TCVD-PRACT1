@@ -1,4 +1,5 @@
 import csv
+import re 
 import time
 import random
 from selenium import webdriver
@@ -15,15 +16,9 @@ from fake_useragent import UserAgent
 EMAIL = "alex.sanchez.casals@gmail.com"
 PASSWORD = "RH@cvLDi!5!j!YU"
 
-
 # Glassdoor URLs
 LOGIN_URL = "https://www.glassdoor.es/index.htm"
 JOBS_URL = "https://www.glassdoor.es/Empleo/index.htm"
-#JOBS_URL = "https://www.glassdoor.es/Empleo/espa%C3%B1a-empleos-SRCH_IL.0,6_IN219.htm" #limited to spain TODO: click it also programatically
-
-# REVIEWS_URL = "https://www.glassdoor.es/Opiniones/index.htm?filterType=RATING_OVERALL&locId=219&locType=N&locName=Espa%C3%B1a&occ=Data+Science&page=1&overall_rating_low=4"
-# SALARY_URL = "https://www.glassdoor.es/Sueldos/espa%C3%B1a-data-scientist-sueldo-SRCH_IL.0,6_IN219_KO7,21.htm"
-
 
 # Set up ChromeDriver path (Modify this for your system)
 CHROMEDRIVER_PATH = "resources/chromedriver-linux64/chromedriver"
@@ -36,6 +31,25 @@ JOB_TITLES = [
 ]
 
 LOCATIONS = ['España']
+
+
+def get_total_jobs_count():
+    try:
+        header_element = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="left-column"]/div[1]/span/div/h1'))
+        )
+        header_text = header_element.text
+        match = re.search(r"(\d+)", header_text)
+        if match:
+            total_jobs = int(match.group(1))
+            print(f"📊 Total job offers found: {total_jobs}")
+            return total_jobs
+        else:
+            print("❌ Could not extract job count from header text.")
+            return 0
+    except Exception as e:
+        print(f"❌ Failed to extract total job count: {e}")
+        return 0
 
 def close_cookie_banner():
     try:
@@ -128,7 +142,6 @@ def scrape_jobs():
 
             random_sleep()
             
-            
 
             
             try:
@@ -153,8 +166,25 @@ def scrape_jobs():
 
             random_sleep()
            
+            JOBS_COUNT = get_total_jobs_count()
+            no_more_jobs = 0
             #load more jobs
-            for scroll_round in range(4):
+
+            for scroll_round in range(int(JOBS_COUNT/30)):
+                if no_more_jobs > 5: 
+                    no_more_jobs = 0
+                    break
+                try:
+                    close_button = WebDriverWait(driver, 3).until(
+                        EC.element_to_be_clickable((By.XPATH, '//button[@aria-label="Cancelar"]'))
+                    )
+                    close_button.click()
+                    print("🔵 Closed modal successfully.")
+                except:
+                    print("🟡 No modal found or already closed.")
+                   
+                random_sleep()
+                    
                 print(f"\n🔄 Scroll round {scroll_round + 1}...")
 
                 # Simula scroll gradual com un usuari
@@ -163,24 +193,28 @@ def scrape_jobs():
                     print(f"    🖱️ Scrolled down {scroll_step + 1}")
                     random_sleep(1, 2)
 
-                # Esperar càrrega de nous elements
-                random_sleep(2, 3)
+                    # Esperar càrrega de nous elements
+                    random_sleep(2, 3)
 
-# Buscar i clicar el botó "Más empleos" si apareix
-            try:
-                close_cookie_banner()  # 👈👈 Solució clau abans de clicar
+                # Buscar i clicar el botó "Más empleos" si apareix
+            
+                    try:
+                        close_cookie_banner()  
 
-                more_button = WebDriverWait(driver, 4).until(
-                    EC.element_to_be_clickable((By.XPATH, '//*[@id="left-column"]/div[2]/div/div/button[1]'))
-                )
-                driver.execute_script("arguments[0].scrollIntoView(true);", more_button)
-                random_sleep(1, 2)
-                more_button.click()
-                print("🟢 Clicked 'Más empleos' to load more jobs.")
-                random_sleep(4, 6)
-            except Exception as e:
-                print(f"🔚 No more 'Más empleos' button or unable to click. ({e})")
-                break
+                        more_button = WebDriverWait(driver, 4).until(
+                            EC.element_to_be_clickable((By.XPATH, '//*[@id="left-column"]/div[2]/div/div/button[1]'))
+                        )
+                        driver.execute_script("arguments[0].scrollIntoView(true);", more_button)
+                        random_sleep(1, 2)
+                        more_button.click()
+                        print("🟢 Clicked 'Más empleos' to load more jobs.")
+                        random_sleep(4, 6)
+                    except Exception as e:
+                        print(f"🔚 No more 'Más empleos' button or unable to click. ({e})")
+                        no_more_jobs += 1
+                        break
+                        
+                    
             # Locate the job listings container
             try:
                 job_list = driver.find_element(By.XPATH, '//*[@id="left-column"]/div[2]/ul')
