@@ -56,7 +56,7 @@ LOCATIONS = ['España']
 python source/scraper.py
 ```
 
-3. El resultat es desa en `datasets/glassdoor_jobs.csv`.
+4. El resultat es desa en `datasets/glassdoor_jobs.csv`.
 
 ## :scroll: Dataset generat
 
