@@ -37,6 +37,17 @@ LOCATIONS = ['España']
 
 SCROLL_COUNT = 5
 
+# Set up WebDriver options
+options = Options()
+options.add_argument(f"user-agent={UserAgent().random}")
+options.add_argument("--disable-blink-features=AutomationControlled")
+options.add_argument("--incognito")
+options.add_argument("--start-maximized")
+
+# Set up WebDriver service
+service = Service(CHROMEDRIVER_PATH)
+driver = webdriver.Chrome(service=service, options=options)
+
 ###########
 # HELPERS #
 ###########
@@ -71,20 +82,14 @@ def close_cookie_banner():
     except:
         pass
 
-# Set up WebDriver options
-options = Options()
-options.add_argument(f"user-agent={UserAgent().random}")
-options.add_argument("--disable-blink-features=AutomationControlled")
-options.add_argument("--incognito")
-options.add_argument("--start-maximized")
-
-# Set up WebDriver service
-service = Service(CHROMEDRIVER_PATH)
-driver = webdriver.Chrome(service=service, options=options)
 
 def random_sleep(min_time=3, max_time=6):
     """Generates a random sleep interval to prevent bot detection."""
     time.sleep(random.uniform(min_time, max_time))
+
+######################
+# SCRAPING FUNCTIONS #
+######################
 
 def login():
     """Logs into Glassdoor."""
@@ -151,10 +156,15 @@ def load_more_jobs(n_jobs):
         n_jobs += 1
     return n_jobs
 
+############
+# SCRAPING #
+############
+
 def scrape_jobs():
     """Scrapes job listings for multiple job titles."""
     all_jobs_data = []
 
+    #Press banner to stay in web
     press_button(x_path='//button[contains(@class, "css-w7kqor")]', name='stay in web')
 
     for location in LOCATIONS: 
