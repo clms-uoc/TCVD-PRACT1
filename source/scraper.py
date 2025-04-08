@@ -149,7 +149,7 @@ def load_more_jobs(n_jobs):
         driver.execute_script("arguments[0].scrollIntoView(true);", more_button)
         random_sleep(1, 2)
         more_button.click()
-        print("🟢 Clicked 'Más empleos' to load more jobs.")
+        print("Clicked 'Más empleos' to load more jobs.")
         random_sleep(4, 6)
     except Exception as e:
         print(f"No more 'Más empleos' button or unable to click. ({e})")
