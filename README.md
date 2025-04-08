@@ -35,7 +35,22 @@ pip install -r requirements.txt
 ## ⚙️ Execució
 
 1. Introdueix les teves credencials de Glassdoor a l’script (`EMAIL`, `PASSWORD`) o inputeles per CLI.
-2. Executa el script:
+2. A la primera part de l'script `source/scraper.py` es troben les diferents opcions de configuració. Es poden modificar per afegir o treure feines, localitzacions o modificar el driver de chrome si la versió utilitzada és diferent:
+```python
+
+# Set up ChromeDriver path (Modify this for your system)
+CHROMEDRIVER_PATH = "resources/chromedriver-linux64/chromedriver"
+
+# Job titles to search
+JOB_TITLES = [
+    "Data Scientist", "Data Engineer", "Data Analyst", "Machine Learning Engineer",
+    "AI Engineer", "Business Intelligence Analyst", "Big Data Engineer",
+    "NLP Engineer", "Data Architect"
+]
+
+LOCATIONS = ['España']
+```  
+3. Executa el script:
 
 ```bash
 python source/scraper.py
