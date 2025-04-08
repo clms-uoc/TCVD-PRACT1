@@ -34,14 +34,18 @@ pip install -r requirements.txt
 
 ## ⚙️ Execució
 
-1. Introdueix les teves credencials de Glassdoor a l’script (`EMAIL`, `PASSWORD`).
+1. Introdueix les teves credencials de Glassdoor a l’script (`EMAIL`, `PASSWORD`) o inputeles per CLI.
 2. Executa el script:
 
 ```bash
-python source/craper.py
+python source/scraper.py
 ```
 
 3. El resultat es desa en `datasets/glassdoor_jobs.csv`.
+
+## :scroll: Dataset generat
+
+El DOI del dataset generat és [Data related job offers in Glassdoor (2025)](https://doi.org/10.5281/zenodo.15170537)
 
 ## 🛡️ Consideracions ètiques i legals
 
