@@ -45,7 +45,7 @@ python source/scraper.py
 
 ## :scroll: Dataset generat
 
-El DOI del dataset generat és: `https://doi.org/10.5281/zenodo.15170537` [Data related job offers in Glassdoor (2025)](https://doi.org/10.5281/zenodo.15170537)
+El DOI del dataset generat és: `https://doi.org/10.5281/zenodo.15170537`. Link: [Data related job offers in Glassdoor (2025)](https://doi.org/10.5281/zenodo.15170537)
 
 ## 🛡️ Consideracions ètiques i legals
 
